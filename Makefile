@@ -623,6 +623,8 @@ export KBUILD_IMAGE ?= vmlinux
 # images. Default is /boot, but you can set it to other values
 export	INSTALL_PATH ?= /boot
 
+export INSTALL_MOD_PATH = `pwd`/wifi_audio
+
 #
 # INSTALL_MOD_PATH specifies a prefix to MODLIB for module directory
 # relocations required by build roots.  This is not defined in the

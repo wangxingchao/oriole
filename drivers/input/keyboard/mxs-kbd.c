@@ -127,6 +127,7 @@ static unsigned mxskbd_decode_button(struct mxskbd_keypair *codes,
 		    (raw_button < (codes->raw + LRADC_NOISE_MARGIN))) {
 			pr_debug("matches code 0x%x = %d\n",
 				codes->kcode, codes->kcode);
+
 			return codes->kcode;
 		}
 		codes++;

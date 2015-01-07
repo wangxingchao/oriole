@@ -981,15 +981,15 @@ static void __init mx28_init_lradc(void)
 #if defined(CONFIG_KEYBOARD_MXS) || defined(CONFIG_KEYBOARD_MXS_MODULE)
 static struct mxskbd_keypair keyboard_data[] = {
 	{ 100, KEY_F4 },
-	{ 306, KEY_F5 },
+	{ 306, KEY_RIGHT },
 	{ 626, KEY_F6 },
-	{ 932, KEY_F7 },
+	{ 932, KEY_LEFT },
 	{ 1260, KEY_F8 },
-	{ 1584, KEY_F9 },
+	{ 1584, KEY_UP },
 	{ 1907, KEY_F10 },
-	{ 2207, KEY_F11 },
+	{ 2207, KEY_DOWN },
 	{ 2525, KEY_F12 },
-	{ 2831, KEY_F13},
+	{ 2831, KEY_ENTER },
 	{ 3134, KEY_F14 },
 	{ -1, 0 },
 };

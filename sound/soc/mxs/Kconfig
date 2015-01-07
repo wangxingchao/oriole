@@ -50,3 +50,12 @@ config SND_MXS_SOC_EVK_DEVB_SPDIF
 	help
 	  Say Y if you want to add support for SoC audio on MXS EVK development
 	  board with the SPDIF transmitter.
+
+config SND_MXS_SOC_WM_TAS5713
+        tristate "SoC Audio support for wireless speaker TAS5713"
+        depends on SND_MXS_SOC && ARCH_MX28
+        select SND_SOC_TAS5713
+        help
+          Say Y if you want to add support for SoC audio on wireless music 
+          board with the TAS5713 class D amp.
+
