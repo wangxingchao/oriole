@@ -64,7 +64,8 @@ static __init int efika_fabric_init(void)
 	card.num_links = ARRAY_SIZE(efika_fabric_dai);
 
 	device.card = &card;
-	device.codec_dev = &soc_codec_dev_stac9766;
+	//device.codec_dev = &soc_codec_dev_stac9766;
+	device.codec_dev = &soc_codec_dev_tas5713;
 
 	pdev = platform_device_alloc("soc-audio", 1);
 	if (!pdev) {
