@@ -74,6 +74,85 @@ static const struct snd_kcontrol_new tas5713_snd_controls[] = {
  *                                                           
  */
 
+static unsigned int tas5713_hw_read(struct snd_soc_codec *codec,
+				     unsigned int reg)
+{
+	struct tas5713_priv *tas5713 = snd_soc_codec_get_drvdata(codec);
+	struct i2c_client *client = codec->control_data;
+	int i2c_ret;
+	u16 value;
+	u8 buf0[2], buf1[2];
+	u16 addr = client->addr;
+	u16 flags = client->flags;
+	struct i2c_msg msg[2] = {
+		{addr, flags, 2, buf0},
+		{addr, flags | I2C_M_RD, 2, buf1},
+	};
+
+	//tas5713->need_clk_for_access = 1;
+	//tas5713_clock_gating(codec, 1);
+	buf0[0] = (reg & 0xff00) >> 8;
+	buf0[1] = reg & 0xff;
+	i2c_ret = i2c_transfer(client->adapter, msg, 2);
+	//tas5713->need_clk_for_access = 0;
+	//tas5713_clock_gating(codec, 0);
+	if (i2c_ret < 0) {
+		pr_err("%s: read reg error : Reg 0x%02x\n", __func__, reg);
+		return 0;
+	}
+
+	value = buf1[0] << 8 | buf1[1];
+
+	pr_debug("r r:%02x,v:%04x\n", reg, value);
+	return value;
+}
+
+static unsigned int tas5713_read(struct snd_soc_codec *codec, unsigned int reg)
+{
+	return tas5713_hw_read(codec, reg);
+}
+
+static inline void tas5713_write_reg_cache(struct snd_soc_codec *codec,
+					    u16 reg, unsigned int value)
+{
+	u16 *cache = codec->reg_cache;
+	unsigned int offset = reg >> 1;
+	if (offset < ARRAY_SIZE(tas5713_regs))
+		cache[offset] = value;
+}
+
+static int tas5713_write(struct snd_soc_codec *codec, unsigned int reg,
+			  unsigned int value)
+{
+	struct tas5713_priv *tas5713 = snd_soc_codec_get_drvdata(codec);
+	struct i2c_client *client = codec->control_data;
+	u16 addr = client->addr;
+	u16 flags = client->flags;
+	u8 buf[4];
+	int i2c_ret;
+	struct i2c_msg msg = { addr, flags, 4, buf };
+
+	//tas5713->need_clk_for_access = 1;
+	//tas5713_clock_gating(codec, 1);
+	tas5713_write_reg_cache(codec, reg, value);
+	pr_debug("w r:%02x,v:%04x\n", reg, value);
+	buf[0] = (reg & 0xff00) >> 8;
+	buf[1] = reg & 0xff;
+	buf[2] = (value & 0xff00) >> 8;
+	buf[3] = value & 0xff;
+
+	i2c_ret = i2c_transfer(client->adapter, &msg, 1);
+	//tas5713->need_clk_for_access = 0;
+	//tas5713_clock_gating(codec, 0);
+	if (i2c_ret < 0) {
+		pr_err("%s: write reg error : Reg 0x%02x = 0x%04x\n",
+		       __func__, reg, value);
+		return -EIO;
+	}
+
+	return i2c_ret;
+}
+
 static int tas5713_hw_params(struct snd_pcm_substream *substream,
 			    struct snd_pcm_hw_params *params,
 			    struct snd_soc_dai *dai)
@@ -138,7 +217,7 @@ static struct snd_soc_dai tas5713_dai = {
 		.rates		    = SNDRV_PCM_RATE_8000_48000,
 		.formats	    = (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE ),
 	},
-	//.ops        = &tas5713_dai_ops,
+	.ops        = &tas5713_dai_ops,
 };
 
 /*
@@ -185,7 +264,7 @@ static int tas5713_probe(struct platform_device *pdev)
 	
 	i2c = container_of(codec->dev, struct i2c_client, dev);
 	
-	codec->control_data = tas5713->regmap;
+	//codec->control_data = client;
 
 	ret = snd_soc_codec_set_cache_io(codec, 8, 8, SND_SOC_I2C);
 	if (ret < 0) {
@@ -237,8 +316,8 @@ static int tas5713_probe(struct platform_device *pdev)
 static struct snd_soc_codec_device soc_codec_dev_tas5713 = {
 	.probe = tas5713_probe,
 	.remove = tas5713_remove,
-	//.controls = tas5713_snd_controls,
-	//.num_controls = ARRAY_SIZE(tas5713_snd_controls),
+	.controls = tas5713_snd_controls,
+	.num_controls = ARRAY_SIZE(tas5713_snd_controls),
 };
 EXPORT_SYMBOL_GPL(soc_codec_dev_tas5713);
 
@@ -303,16 +382,36 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 	}
 #endif
 
-	i2c_set_clientdata(i2c, priv_data);
 	snd_soc_codec_set_drvdata(&priv_data->codec, priv_data);
 
+	mutex_init(&codec->mutex);
+	INIT_LIST_HEAD(&codec->dapm_widgets);
+	INIT_LIST_HEAD(&codec->dapm_paths);
+
+	i2c_set_clientdata(i2c, priv_data);
+
+	//TODO: Do we need regulator for voltage setting?
+
+	priv_data->codec.control_data = i2c;
+
+	//TODO: check i2c chip id or else, ensure the i2c hardware works
+	msleep(2);
+
+	val = tas5713_read(codec, TAS5713_DEVICE_ID);
+	//check return device id, if fail, return
+	//if (val != correct_chip_id)
+	//	return;
+
+	priv_data->codec.dev = &i2c->dev;
 	priv_data->codec.name = "tas5713";
 	priv_data->codec.owner = THIS_MODULE;
 	priv_data->codec.dai = &tas5713_dai;
 	priv_data->codec.num_dai = 1;
-	//priv_data->codec.read = aic26_reg_read;
-	//priv_data->codec.write = aic26_reg_write;
+	priv_data->codec.read = tas5713_read;
+	priv_data->codec.write = tas5713_write;
 
+	//should add cache operations here
+	//
 	tas_codec = &priv_data->codec;
 
 	ret = snd_soc_register_codec(tas_codec);
@@ -355,7 +454,6 @@ static struct i2c_driver tas5713_i2c_driver = {
 	.driver = {
 		.name = "tas5713",
 		.owner = THIS_MODULE,
-		//.of_match_table = tas5713_of_match,
 	},
 	.probe = tas5713_i2c_probe,
 	.remove = tas5713_i2c_remove,
