@@ -115,10 +115,12 @@ static unsigned int tas5713_read(struct snd_soc_codec *codec, unsigned int reg)
 static inline void tas5713_write_reg_cache(struct snd_soc_codec *codec,
 					    u16 reg, unsigned int value)
 {
+#if 0
 	u16 *cache = codec->reg_cache;
 	unsigned int offset = reg >> 1;
 	if (offset < ARRAY_SIZE(tas5713_regs))
 		cache[offset] = value;
+#endif
 }
 
 static int tas5713_write(struct snd_soc_codec *codec, unsigned int reg,
@@ -200,7 +202,9 @@ static int tas5713_mute_stream(struct snd_soc_dai *dai, int mute)
 		val = TAS5713_SOFT_MUTE_ALL;
 	}
 
-	return regmap_write(tas5713->regmap, TAS5713_SOFT_MUTE, val);
+	//TODO: add correct operations here
+	//return regmap_write(tas5713->regmap, TAS5713_SOFT_MUTE, val);
+	return 0;
 }
 
 static const struct snd_soc_dai_ops tas5713_dai_ops = {
@@ -309,6 +313,8 @@ static int tas5713_probe(struct platform_device *pdev)
 	// Unmute
 	ret = snd_soc_write(codec, TAS5713_SYSTEM_CTRL2, 0x00);
 
+	snd_soc_add_controls(codec, tas5713_snd_controls,
+			     ARRAY_SIZE(tas5713_snd_controls));
 
 	return 0;
 }
@@ -316,8 +322,8 @@ static int tas5713_probe(struct platform_device *pdev)
 static struct snd_soc_codec_device soc_codec_dev_tas5713 = {
 	.probe = tas5713_probe,
 	.remove = tas5713_remove,
-	.controls = tas5713_snd_controls,
-	.num_controls = ARRAY_SIZE(tas5713_snd_controls),
+//	.controls = tas5713_snd_controls,
+//	.num_controls = ARRAY_SIZE(tas5713_snd_controls),
 };
 EXPORT_SYMBOL_GPL(soc_codec_dev_tas5713);
 
@@ -369,6 +375,7 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 			    const struct i2c_device_id *id)
 {
 	int ret;
+	int val;
 
 	priv_data = devm_kzalloc(&i2c->dev, sizeof *priv_data, GFP_KERNEL);
 	if (!priv_data)
@@ -384,9 +391,9 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 
 	snd_soc_codec_set_drvdata(&priv_data->codec, priv_data);
 
-	mutex_init(&codec->mutex);
-	INIT_LIST_HEAD(&codec->dapm_widgets);
-	INIT_LIST_HEAD(&codec->dapm_paths);
+	mutex_init(&priv_data->codec.mutex);
+	INIT_LIST_HEAD(&priv_data->codec.dapm_widgets);
+	INIT_LIST_HEAD(&priv_data->codec.dapm_paths);
 
 	i2c_set_clientdata(i2c, priv_data);
 
@@ -396,11 +403,6 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 
 	//TODO: check i2c chip id or else, ensure the i2c hardware works
 	msleep(2);
-
-	val = tas5713_read(codec, TAS5713_DEVICE_ID);
-	//check return device id, if fail, return
-	//if (val != correct_chip_id)
-	//	return;
 
 	priv_data->codec.dev = &i2c->dev;
 	priv_data->codec.name = "tas5713";
@@ -412,8 +414,13 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 
 	//should add cache operations here
 	//
+
 	tas_codec = &priv_data->codec;
 
+	val = tas5713_read(tas_codec, TAS5713_DEVICE_ID);
+	//check return device id, if fail, return
+	//if (val != correct_chip_id)
+	//	return;
 	ret = snd_soc_register_codec(tas_codec);
 	if (ret != 0) {
 		dev_err(tas_codec->dev, "Failed to register codec: %d\n", ret);
