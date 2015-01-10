@@ -237,8 +237,8 @@ static int tas5713_probe(struct platform_device *pdev)
 static struct snd_soc_codec_device soc_codec_dev_tas5713 = {
 	.probe = tas5713_probe,
 	.remove = tas5713_remove,
-	.controls = tas5713_snd_controls,
-	.num_controls = ARRAY_SIZE(tas5713_snd_controls),
+	//.controls = tas5713_snd_controls,
+	//.num_controls = ARRAY_SIZE(tas5713_snd_controls),
 };
 EXPORT_SYMBOL_GPL(soc_codec_dev_tas5713);
 
@@ -295,11 +295,13 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 	if (!priv_data)
 		return -ENOMEM;
 
+#if 0
 	priv_data->regmap = devm_regmap_init_i2c(i2c, &tas5713_regmap_config);
 	if (IS_ERR(priv_data->regmap)) {
 		ret = PTR_ERR(priv_data->regmap);
 		return ret;
 	}
+#endif
 
 	i2c_set_clientdata(i2c, priv_data);
 	snd_soc_codec_set_drvdata(&priv_data->codec, priv_data);
@@ -315,7 +317,7 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 
 	ret = snd_soc_register_codec(tas_codec);
 	if (ret != 0) {
-		dev_err(codec->dev, "Failed to register codec: %d\n", ret);
+		dev_err(tas_codec->dev, "Failed to register codec: %d\n", ret);
 		kfree(priv_data);
 		return ret;
 	}

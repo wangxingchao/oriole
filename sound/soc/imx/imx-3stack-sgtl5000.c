@@ -566,7 +566,8 @@ static struct snd_soc_card snd_soc_card_imx_3stack = {
 
 static struct snd_soc_device imx_3stack_snd_devdata = {
 	.card = &snd_soc_card_imx_3stack,
-	.codec_dev = &soc_codec_dev_sgtl5000,
+	//.codec_dev = &soc_codec_dev_sgtl5000,
+	.codec_dev = &soc_codec_dev_tas5713,
 };
 
 static int __devinit imx_3stack_sgtl5000_probe(struct platform_device *pdev)

@@ -1,6 +1,6 @@
 config SND_SOC_OF_SIMPLE
 	tristate
-	default y
+	default n 
 	
 config SND_MPC52xx_DMA
 	tristate
