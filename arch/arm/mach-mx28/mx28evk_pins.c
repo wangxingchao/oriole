@@ -1260,7 +1260,7 @@ static struct pin_desc mx28evk_spi_pins[] = {
 	{
 	 .name	= "SSP2 MOSI",
 	 .id	= PINID_SSP2_MOSI,
-	 .fun	= PIN_FUN1,
+	 .fun	= PIN_GPIO,
 	 .strength	= PAD_4MA,
 	 .voltage	= PAD_3_3V,
 	 .drive 	= 1,
@@ -1268,7 +1268,7 @@ static struct pin_desc mx28evk_spi_pins[] = {
 	{
 	 .name	= "SSP2 MISO",
 	 .id	= PINID_SSP2_MISO,
-	 .fun	= PIN_FUN1,
+	 .fun	= PIN_GPIO,
 	 .strength	= PAD_4MA,
 	 .voltage	= PAD_3_3V,
 	 .drive 	= 1,
@@ -1276,7 +1276,7 @@ static struct pin_desc mx28evk_spi_pins[] = {
 	{
 	 .name	= "SSP2 SCK",
 	 .id	= PINID_SSP2_SCK,
-	 .fun	= PIN_FUN1,
+	 .fun	= PIN_GPIO,
 	 .strength	= PAD_4MA,
 	 .voltage	= PAD_3_3V,
 	 .drive 	= 1,

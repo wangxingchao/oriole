@@ -213,7 +213,7 @@ static const struct snd_soc_dai_ops tas5713_dai_ops = {
 };
 
 static struct snd_soc_dai tas5713_dai = {
-	.name		= "tas5713-hifi",
+	.name		= "tas5713",
 	.playback 	= {
 		.stream_name	= "Playback",
 		.channels_min	= 2,
@@ -248,7 +248,6 @@ static int tas5713_probe(struct platform_device *pdev)
 	int i, ret;
 	struct snd_soc_codec *codec;
 	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
-	
 	dev_info(&pdev->dev, "Probing TAS5713 SoC CODEC driver\n");
 	dev_dbg(&pdev->dev, "socdev=%p\n", socdev);
 	dev_dbg(&pdev->dev, "codec_data=%p\n", socdev->codec_data);
@@ -260,6 +259,7 @@ static int tas5713_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "tas: missing codec pointer\n");
 		return -ENODEV;
 	}
+
 	codec = &tas5713->codec;
 	socdev->card->codec = codec;
 
@@ -319,7 +319,7 @@ static int tas5713_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static struct snd_soc_codec_device soc_codec_dev_tas5713 = {
+struct snd_soc_codec_device soc_codec_dev_tas5713 = {
 	.probe = tas5713_probe,
 	.remove = tas5713_remove,
 //	.controls = tas5713_snd_controls,
@@ -415,12 +415,21 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 	//should add cache operations here
 	//
 
+	tas5713_dai.dev = priv_data->codec.dev;
 	tas_codec = &priv_data->codec;
 
 	val = tas5713_read(tas_codec, TAS5713_DEVICE_ID);
+	printk("tas5713 i2c read codec id=%x\n",val);
 	//check return device id, if fail, return
 	//if (val != correct_chip_id)
 	//	return;
+	//
+	val = tas5713_read(tas_codec, 0x07);
+	printk("tas5713 i2c read codec volume=%x\n",val);
+
+	val = tas5713_read(tas_codec, 0x08);
+	printk("tas5713 i2c read code volume=%x\n",val);
+
 	ret = snd_soc_register_codec(tas_codec);
 	if (ret != 0) {
 		dev_err(tas_codec->dev, "Failed to register codec: %d\n", ret);
@@ -437,6 +446,7 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 	}
 
 	
+	printk("tas5713 codec driver register finished\n");
 	return ret;
 }
 
@@ -471,6 +481,7 @@ static int __init tas5713_modinit(void)
 {
 	int ret = 0;
 
+	printk("Initialize tas5713 driver\n");
 	ret = i2c_add_driver(&tas5713_i2c_driver);
 	if (ret) {
 		printk(KERN_ERR "Failed to register tas5713 I2C driver: %d\n",

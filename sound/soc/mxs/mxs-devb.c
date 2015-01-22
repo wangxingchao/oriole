@@ -41,6 +41,7 @@
 #include "mxs-dai.h"
 #include "mxs-pcm.h"
 #include "../codecs/sgtl5000.h"
+#include "../codecs/tas5713.h"
 
 struct mxs_evk_priv {
 	int sysclk;
@@ -205,7 +206,8 @@ static struct snd_soc_card snd_soc_card_mxs_evk = {
 
 static struct snd_soc_device mxs_evk_snd_devdata = {
 	.card = &snd_soc_card_mxs_evk,
-	.codec_dev = &soc_codec_dev_sgtl5000,
+	//.codec_dev = &soc_codec_dev_sgtl5000,
+	.codec_dev = &soc_codec_dev_tas5713,
 };
 
 static int __devinit mxs_evk_sgtl5000_probe(struct platform_device *pdev)

@@ -295,6 +295,41 @@ static struct mxs_i2c_plat_data i2c1_platdata = {
 };
 #endif
 
+#define TAS5713_PWR     MXS_PIN_TO_GPIO(PINID_SSP2_SCK)
+#define TAS5713_RST     MXS_PIN_TO_GPIO(PINID_SSP2_MOSI)
+static int tas5713_init(void)
+{
+
+	int ret = 0;
+	printk("tas5713 power/reset pin set\n");
+	// Configure write protect GPIO pin 
+//	ret = gpio_request(MMC0_WP, "mmc0_wp");
+//	if (ret)
+//		goto out_wp;
+
+//set power pin high
+	//gpio_set_value(GPIO_16, 1);
+	//gpio_direction_input(MMC0_WP);
+
+	// Configure POWER pin as gpio to drive power to MMC slot
+	//ret = gpio_request(MMC0_POWER, "mmc0_power");
+	//if (ret)
+	//	goto out_power;
+
+	gpio_direction_output(TAS5713_PWR, 1);
+	gpio_set_value(TAS5713_PWR, 1);
+
+	gpio_direction_output(TAS5713_RST, 0);
+	gpio_set_value(TAS5713_RST,0);
+	mdelay(100);
+
+//set reset pin high
+	gpio_set_value(TAS5713_RST,1);
+	return 0;
+
+}
+
+
 static void __init mx28_init_i2c(void)
 {
 	int i;
@@ -427,6 +462,7 @@ static void mx28_init_gpmi_nfc(void)
 #define MMC0_WP		MXS_PIN_TO_GPIO(PINID_SSP1_SCK)
 #define MMC1_WP		MXS_PIN_TO_GPIO(PINID_GPMI_RESETN)
 #endif
+
 
 static int mxs_mmc_get_wp_ssp0(void)
 {
@@ -1304,7 +1340,6 @@ static void __init mx28_init_dcp(void)
 }
 #endif
 
-#if defined(CONFIG_SND_MXS_SOC_DAI) || defined(CONFIG_SND_MXS_SOC_DAI_MODULE)
 static int audio_clk_init(struct clk *clk)
 {
 	struct clk *pll_clk;
@@ -1382,9 +1417,7 @@ err_clk_finit:
 }
 
 static struct mxs_audio_platform_data audio_plat_data;
-#endif
 
-#if defined(CONFIG_SND_SOC_SGTL5000) || defined(CONFIG_SND_SOC_SGTL5000_MODULE)
 void __init mx28_init_audio(void)
 {	struct platform_device *pdev;
 	pdev = mxs_get_device("mxs-sgtl5000", 0);
@@ -1395,11 +1428,6 @@ void __init mx28_init_audio(void)
 	audio_clk_init(audio_plat_data.saif_mclock);
 	pdev->dev.platform_data = &audio_plat_data;
 }
-#else
-void __init mx28_init_audio(void)
-{
-}
-#endif
 
 #if defined(CONFIG_SND_SOC_MXS_SPDIF) || \
        defined(CONFIG_SND_SOC_MXS_SPDIF_MODULE)
@@ -1622,6 +1650,7 @@ int __init mx28_device_init(void)
 	mx28_init_viim();
 	mx28_init_duart();
 	mx28_init_i2c();
+	tas5713_init();
 	mx28_init_lradc();
 	mx28_init_auart();
 	mx28_init_mmc();
