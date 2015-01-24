@@ -109,6 +109,8 @@
 #define TAS5713_SOFT_MUTE_ALL           0x07
 
 
+extern struct snd_soc_dai tas5713_dai;
+extern struct snd_soc_codec_device soc_codec_dev_tas5713;
 
 struct tas5713_init_command {
         const int size;

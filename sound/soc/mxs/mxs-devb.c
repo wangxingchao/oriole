@@ -40,7 +40,7 @@
 
 #include "mxs-dai.h"
 #include "mxs-pcm.h"
-#include "../codecs/sgtl5000.h"
+//#include "../codecs/sgtl5000.h"
 #include "../codecs/tas5713.h"
 
 struct mxs_evk_priv {
@@ -70,8 +70,8 @@ static int mxs_evk_audio_hw_params(struct snd_pcm_substream *substream,
 	priv->hw = 1;
 	priv->sysclk = 512 * rate;
 
-	snd_soc_dai_set_sysclk(codec_dai, SGTL5000_SYSCLK, (priv->sysclk)/2, 0);
-	snd_soc_dai_set_sysclk(codec_dai, SGTL5000_LRCLK, rate, 0);
+	//snd_soc_dai_set_sysclk(codec_dai, SGTL5000_SYSCLK, (priv->sysclk)/2, 0);
+	//snd_soc_dai_set_sysclk(codec_dai, SGTL5000_LRCLK, rate, 0);
 
 	snd_soc_dai_set_clkdiv(cpu_dai, IMX_SSP_SYS_MCLK, 256);
 	/* set codec to slave mode */
@@ -176,9 +176,9 @@ static int mxs_evk_sgtl5000_init(struct snd_soc_codec *codec)
 
 /* mxs_evk digital audio interface glue - connects codec <--> CPU */
 static struct snd_soc_dai_link mxs_evk_dai = {
-	.name = "SGTL5000",
-	.stream_name = "SGTL5000",
-	.codec_dai = &sgtl5000_dai,
+	.name = "tas5713",
+	.stream_name = "tas5713",
+	.codec_dai = &tas5713_dai,
 	.init = mxs_evk_sgtl5000_init,
 	.ops = &mxs_evk_ops,
 };
@@ -215,8 +215,12 @@ static int __devinit mxs_evk_sgtl5000_probe(struct platform_device *pdev)
 	struct mxs_audio_platform_data *plat = pdev->dev.platform_data;
 	struct mxs_saif *saif_select;
 	int ret = -EINVAL;
+	
+	printk("MI: evk probe callback \n");
+
 	if (plat->init && plat->init())
 		goto err_plat_init;
+	printk("MI: Add saif dais \n");
 	mxs_evk_dai.cpu_dai = &mxs_saif_dai[0];
 	saif_select = (struct mxs_saif *)mxs_evk_dai.cpu_dai->private_data;
 	saif_select->stream_mapping = PLAYBACK_SAIF0_CAPTURE_SAIF1;
@@ -252,6 +256,7 @@ static int __init mxs_evk_init(void)
 {
 	int ret;
 
+	printk("MI: mxs evk init \n");
 	ret = platform_driver_register(&mxs_evk_sgtl5000_audio_driver);
 	if (ret)
 		return -ENOMEM;
@@ -262,6 +267,7 @@ static int __init mxs_evk_init(void)
 
 	platform_set_drvdata(mxs_evk_snd_device, &mxs_evk_snd_devdata);
 	mxs_evk_snd_devdata.dev = &mxs_evk_snd_device->dev;
+	printk("MI: Add platform device \n");
 	ret = platform_device_add(mxs_evk_snd_device);
 
 	if (ret)

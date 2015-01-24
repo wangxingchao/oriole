@@ -167,6 +167,7 @@ static int tas5713_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_codec *codec;
 	codec = dai->codec;
 	//priv_data->codec = dai->codec;
+	printk("tas5713_hw_params: FORMAT=%x\n",params_format(params)) ;
 	
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S16_LE:
@@ -215,7 +216,7 @@ static const struct snd_soc_dai_ops tas5713_dai_ops = {
 	.digital_mute		= tas5713_mute_stream,
 };
 
-static struct snd_soc_dai tas5713_dai = {
+struct snd_soc_dai tas5713_dai = {
 	.name		= "tas5713",
 	.playback 	= {
 		.stream_name	= "Playback",
@@ -226,6 +227,7 @@ static struct snd_soc_dai tas5713_dai = {
 	},
 	.ops        = &tas5713_dai_ops,
 };
+EXPORT_SYMBOL_GPL(tas5713_dai);
 
 /*
  *   ___         _          ___      _             
@@ -262,10 +264,9 @@ static int tas5713_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "tas: missing codec pointer\n");
 		return -ENODEV;
 	}
-
 	codec = &tas5713->codec;
 	socdev->card->codec = codec;
-
+        printk("Registering PCMS ,dev=%p,socdev->dev=%p\n",&pdev->dev,socdev->dev) ;
 	dev_dbg(&pdev->dev, "Registering PCMs, dev=%p, socdev->dev=%p\n",
 		&pdev->dev, socdev->dev);
 	
@@ -427,6 +428,9 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 	ch1_volume =(u8)tas5713_read(tas_codec, TAS5713_VOL_CH1);
 	printk("tas5713 master=%x,ch1=%x\n",master_volume,ch1_volume);
 	tas5713_write(tas_codec,TAS5713_VOL_MASTER,0x30) ;
+	master_volume =(u8)tas5713_read(tas_codec, TAS5713_VOL_MASTER);
+	printk("tas5713 master volume changed,new value=%x\n",master_volume);
+
         //check return device id, if fail, return
 	//if (val != correct_chip_id)
 	//	return;
