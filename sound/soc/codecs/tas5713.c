@@ -81,27 +81,30 @@ static unsigned int tas5713_hw_read(struct snd_soc_codec *codec,
 	struct i2c_client *client = codec->control_data;
 	int i2c_ret;
 	u16 value;
-	u8 buf0[2], buf1[2];
+	u8 buf0[1], buf1[1];
 	u16 addr = client->addr;
 	u16 flags = client->flags;
 	struct i2c_msg msg[2] = {
-		{addr, flags, 2, buf0},
-		{addr, flags | I2C_M_RD, 2, buf1},
+		{addr, flags, 1, buf0},
+		{addr, flags | I2C_M_RD, 1, buf1},
 	};
 
 	//tas5713->need_clk_for_access = 1;
 	//tas5713_clock_gating(codec, 1);
-	buf0[0] = (reg & 0xff00) >> 8;
-	buf0[1] = reg & 0xff;
+	buf0[0]= reg & 0xff ;
+//	buf0[0] = (reg & 0xff00) >> 8;
+//	buf0[1] = reg & 0xff;
 	i2c_ret = i2c_transfer(client->adapter, msg, 2);
 	//tas5713->need_clk_for_access = 0;
 	//tas5713_clock_gating(codec, 0);
+//	printk("i2c_addr=%x,ret=%d\n",addr,i2c_ret) ;
 	if (i2c_ret < 0) {
 		pr_err("%s: read reg error : Reg 0x%02x\n", __func__, reg);
 		return 0;
 	}
 
-	value = buf1[0] << 8 | buf1[1];
+	//value = buf1[0] << 8 | buf1[1];
+	value=buf1[0];
 
 	pr_debug("r r:%02x,v:%04x\n", reg, value);
 	return value;
@@ -130,18 +133,18 @@ static int tas5713_write(struct snd_soc_codec *codec, unsigned int reg,
 	struct i2c_client *client = codec->control_data;
 	u16 addr = client->addr;
 	u16 flags = client->flags;
-	u8 buf[4];
+	u8 buf[2];
 	int i2c_ret;
-	struct i2c_msg msg = { addr, flags, 4, buf };
+	struct i2c_msg msg = { addr, flags, 2, buf };
 
 	//tas5713->need_clk_for_access = 1;
 	//tas5713_clock_gating(codec, 1);
 	tas5713_write_reg_cache(codec, reg, value);
 	pr_debug("w r:%02x,v:%04x\n", reg, value);
-	buf[0] = (reg & 0xff00) >> 8;
-	buf[1] = reg & 0xff;
-	buf[2] = (value & 0xff00) >> 8;
-	buf[3] = value & 0xff;
+//	buf[0] = (reg & 0xff00) >> 8;
+	buf[0] = reg & 0xff;
+//	buf[2] = (value & 0xff00) >> 8;
+	buf[1] = value & 0xff;
 
 	i2c_ret = i2c_transfer(client->adapter, &msg, 1);
 	//tas5713->need_clk_for_access = 0;
@@ -376,7 +379,7 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 {
 	int ret;
 	int val;
-
+        u8 master_volume,ch1_volume ;
 	priv_data = devm_kzalloc(&i2c->dev, sizeof *priv_data, GFP_KERNEL);
 	if (!priv_data)
 		return -ENOMEM;
@@ -419,17 +422,14 @@ static int tas5713_i2c_probe(struct i2c_client *i2c,
 	tas_codec = &priv_data->codec;
 
 	val = tas5713_read(tas_codec, TAS5713_DEVICE_ID);
-	printk("tas5713 i2c read codec id=%x\n",val);
-	//check return device id, if fail, return
+	printk("tas5713 i2c read codec id=%x\n",(u8)val);
+	master_volume =(u8)tas5713_read(tas_codec, TAS5713_VOL_MASTER);
+	ch1_volume =(u8)tas5713_read(tas_codec, TAS5713_VOL_CH1);
+	printk("tas5713 master=%x,ch1=%x\n",master_volume,ch1_volume);
+	tas5713_write(tas_codec,TAS5713_VOL_MASTER,0x30) ;
+        //check return device id, if fail, return
 	//if (val != correct_chip_id)
 	//	return;
-	//
-	val = tas5713_read(tas_codec, 0x07);
-	printk("tas5713 i2c read codec volume=%x\n",val);
-
-	val = tas5713_read(tas_codec, 0x08);
-	printk("tas5713 i2c read code volume=%x\n",val);
-
 	ret = snd_soc_register_codec(tas_codec);
 	if (ret != 0) {
 		dev_err(tas_codec->dev, "Failed to register codec: %d\n", ret);
